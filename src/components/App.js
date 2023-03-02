@@ -1,64 +1,63 @@
 import React from 'react';
 import { nanoid } from 'nanoid';
+import { ContactList } from './ContactList/ContactList';
+import { ContactForm } from './ContactForm/ContactForm';
+import { Fiender } from './Fiender/Fiender';
+import css from './App.module.css';
 
 export class App extends React.Component {
   state = {
     contacts: [],
-    name: '',
+    filter: '',
   };
 
-  handleAddContact = event => {
-    this.setState({ name: event.currentTarget.value });
+  handleSubmit = (values, { resetForm }) => {
+    if (this.state.contacts.some(contact => contact.name === values.name)) {
+      alert(`${values.name} is already in contacts`);
+    } else {
+      values.id = nanoid();
+      this.setState(prevState => ({
+        contacts: [...prevState['contacts'], values],
+      }));
+      resetForm();
+    }
+  };
+  handleInputChange = event => {
+    this.setState({ filter: event.target.value });
+  };
+  handleFilter = () => {
+    const { filter, contacts } = this.state;
+    if (filter === '') {
+      return contacts;
+    }
+    const normFilter = filter.toLowerCase();
+    return contacts.filter(contact =>
+      contact.name.toLowerCase().includes(normFilter)
+    );
   };
 
-  handleSubmit = event => {
-    event.preventDefault();
-
-    this.setState(prevState => ({
-      contacts: [...prevState['contacts'], event.target[0].value],
-    }));
-    console.log(this.state);
+  handleDelete = event => {
+    this.setState({
+      contacts: this.state.contacts.filter(
+        contact => contact.id !== event.target.id
+      ),
+    });
   };
 
   render() {
     return (
       <div>
-        <div>
-          <h1>Phonebook</h1>
-          <form onSubmit={this.handleSubmit}>
-            <label>
-              Name
-              <input
-                type="text"
-                name="name"
-                value={this.state.name}
-                // pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-                // title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
-                // required
-                onChange={this.handleAddContact}
-              />
-            </label>
-            <button type="submit">Add contact</button>
-          </form>
-        </div>
-        <div>
-          <h1>Contacts</h1>
-          <ContactsList contactNames={this.state.contacts} />
-        </div>
+        <ContactForm
+          initialValues={{ name: '', number: '' }}
+          onSubmit={this.handleSubmit}
+        />
+        <Fiender value={this.state.filter} onChange={this.handleInputChange} />
+        <h1 className={css.title}>Contacts</h1>
+        <ContactList
+          contactNames={this.handleFilter()}
+          onDelete={this.handleDelete}
+        />
       </div>
     );
   }
 }
-
-// const contactName = this.state.name;
-
-const ContactsList = ({ contactNames }) => {
-  return (
-    <ul>
-      {contactNames.map(contactName => {
-        const id = nanoid();
-        return <li key={id}> {contactName}</li>;
-      })}
-    </ul>
-  );
-};
